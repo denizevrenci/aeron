@@ -268,7 +268,7 @@ TEST_F(ClientConductorTest, shouldReturnExclusivePublicationAfterLogBuffersCreat
     std::int64_t id = m_conductor.addExclusivePublication(CHANNEL, STREAM_ID);
 
     m_conductor.onNewExclusivePublication(
-        id, id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
+        id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
 
     std::shared_ptr<ExclusivePublication> pub = m_conductor.findExclusivePublication(id);
 
@@ -289,8 +289,8 @@ TEST_F(ClientConductorTest, shouldReleaseExclusivePublicationAfterGoingOutOfScop
         {
         });
 
-    m_conductor.onNewExclusivePublication(
-        id, id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
+    m_conductor.onNewExclusivePublication(id,
+        id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
 
     {
         std::shared_ptr<ExclusivePublication> pub = m_conductor.findExclusivePublication(id);
@@ -326,7 +326,7 @@ TEST_F(ClientConductorTest, shouldReturnSameExclusivePublicationAfterLogBuffersC
     std::int64_t id = m_conductor.addExclusivePublication(CHANNEL, STREAM_ID);
 
     m_conductor.onNewExclusivePublication(
-        id, id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
+        id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
 
     std::shared_ptr<ExclusivePublication> pub1 = m_conductor.findExclusivePublication(id);
     std::shared_ptr<ExclusivePublication> pub2 = m_conductor.findExclusivePublication(id);
@@ -341,6 +341,7 @@ TEST_F(ClientConductorTest, shouldIgnoreExclusivePublicationReadyForUnknownCorre
     std::int64_t id = m_conductor.addExclusivePublication(CHANNEL, STREAM_ID);
 
     m_conductor.onNewExclusivePublication(
+<<<<<<< HEAD
         id + 1,
         id + 1,
         STREAM_ID,
@@ -348,6 +349,9 @@ TEST_F(ClientConductorTest, shouldIgnoreExclusivePublicationReadyForUnknownCorre
         PUBLICATION_LIMIT_COUNTER_ID,
         CHANNEL_STATUS_INDICATOR_ID,
         m_logFileName);
+=======
+        id + 1, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
+>>>>>>> 2da529d95... [C++] Remove original registration ID from ExclusivePublication.
 
     std::shared_ptr<ExclusivePublication> pub = m_conductor.findExclusivePublication(id);
 
@@ -832,7 +836,7 @@ TEST_F(ClientConductorTest, shouldCloseExclusivePublicationOnInterServiceTimeout
     std::int64_t id = m_conductor.addExclusivePublication(CHANNEL, STREAM_ID);
 
     m_conductor.onNewExclusivePublication(
-        id, id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
+        id, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
 
     std::shared_ptr<ExclusivePublication> pub = m_conductor.findExclusivePublication(id);
 
@@ -867,7 +871,7 @@ TEST_F(ClientConductorTest, shouldCloseAllPublicationsAndSubscriptionsOnInterSer
 
     m_conductor.onNewPublication(
         pubId, pubId, STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID, CHANNEL_STATUS_INDICATOR_ID, m_logFileName);
-    m_conductor.onNewExclusivePublication(exPubId, exPubId,
+    m_conductor.onNewExclusivePublication(exPubId,
         STREAM_ID, SESSION_ID, PUBLICATION_LIMIT_COUNTER_ID_2, CHANNEL_STATUS_INDICATOR_ID, m_logFileName2);
     m_conductor.onSubscriptionReady(subId, CHANNEL_STATUS_INDICATOR_ID);
 

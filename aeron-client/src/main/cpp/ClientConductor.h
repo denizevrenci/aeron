@@ -164,7 +164,6 @@ public:
 
     void onNewExclusivePublication(
         std::int64_t registrationId,
-        std::int64_t originalRegistrationId,
         std::int32_t streamId,
         std::int32_t sessionId,
         std::int32_t publicationLimitCounterId,
@@ -289,7 +288,6 @@ private:
     {
         std::string m_channel;
         std::int64_t m_registrationId;
-        std::int64_t m_originalRegistrationId = -1;
         std::int32_t m_streamId;
         std::int32_t m_sessionId = -1;
         std::int32_t m_publicationLimitCounterId = -1;

@@ -72,7 +72,6 @@ public:
 
                         m_driverListener.onNewExclusivePublication(
                             publicationReady.correlationId(),
-                            publicationReady.registrationId(),
                             publicationReady.streamId(),
                             publicationReady.sessionId(),
                             publicationReady.positionLimitCounterId(),

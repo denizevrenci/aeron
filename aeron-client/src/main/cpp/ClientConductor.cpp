@@ -182,7 +182,6 @@ std::shared_ptr<ExclusivePublication> ClientConductor::findExclusivePublication(
                     *this,
                     state.m_channel,
                     state.m_registrationId,
-                    state.m_originalRegistrationId,
                     state.m_streamId,
                     state.m_sessionId,
                     publicationLimit,
@@ -492,7 +491,6 @@ void ClientConductor::onNewPublication(
 
 void ClientConductor::onNewExclusivePublication(
     std::int64_t registrationId,
-    std::int64_t originalRegistrationId,
     std::int32_t streamId,
     std::int32_t sessionId,
     std::int32_t publicationLimitCounterId,
@@ -510,8 +508,7 @@ void ClientConductor::onNewExclusivePublication(
         state.m_sessionId = sessionId;
         state.m_publicationLimitCounterId = publicationLimitCounterId;
         state.m_channelStatusId = channelStatusIndicatorId;
-        state.m_buffers = getLogBuffers(originalRegistrationId, logFileName);
-        state.m_originalRegistrationId = originalRegistrationId;
+        state.m_buffers = getLogBuffers(registrationId, logFileName);
 
         CallbackGuard callbackGuard(m_isInCallback);
         m_onNewExclusivePublicationHandler(state.m_channel, streamId, sessionId, registrationId);
