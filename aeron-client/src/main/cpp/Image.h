@@ -404,6 +404,74 @@ public:
 
     /**
      * Poll for new messages in a stream. If new messages are found beyond the last consumed position then they
+     * will be delivered via the fragment_handler_t up to a limited number of fragments as specified or the
+     * maximum position specified.
+     *
+     * @param fragmentHandler to which messages are delivered.
+     * @param limitPosition   to consume messages up to.
+     * @param fragmentLimit   for the number of fragments to be consumed during one polling operation.
+     * @return the number of fragments that have been consumed.
+     *
+     * @see fragment_handler_t
+     */
+    template <typename F>
+    inline int boundedPoll(F&& fragmentHandler, std::int64_t limitPosition, int fragmentLimit)
+    {
+        int fragmentsRead = 0;
+
+        if (!isClosed())
+        {
+            std::int64_t initialPosition = m_subscriberPosition.get();
+            std::int32_t initialOffset = (std::int32_t) initialPosition & m_termLengthMask;
+            AtomicBuffer &termBuffer = m_termBuffers[LogBufferDescriptor::indexByPosition(initialPosition,
+                m_positionBitsToShift)];
+            std::int32_t resultingOffset = initialOffset;
+            const std::int64_t capacity = termBuffer.capacity();
+            const std::int32_t endOffset =
+                static_cast<std::int32_t>(std::min(capacity, limitPosition - initialPosition + initialOffset));
+
+            m_header.buffer(termBuffer);
+
+            try
+            {
+                while (fragmentsRead < fragmentLimit && resultingOffset < endOffset)
+                {
+                    const std::int32_t length = FrameDescriptor::frameLengthVolatile(termBuffer, resultingOffset);
+                    if (length <= 0)
+                    {
+                        break;
+                    }
+
+                    const std::int32_t fragmentOffset = resultingOffset;
+                    resultingOffset += util::BitUtil::align(length, FrameDescriptor::FRAME_ALIGNMENT);
+
+                    if (!FrameDescriptor::isPaddingFrame(termBuffer, fragmentOffset))
+                    {
+                        m_header.offset(fragmentOffset);
+                        fragmentHandler(termBuffer, fragmentOffset + DataFrameHeader::LENGTH, length - DataFrameHeader::LENGTH,
+                            m_header);
+
+                        ++fragmentsRead;
+                    }
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                m_exceptionHandler(ex);
+            }
+
+            const std::int64_t resultingPosition = initialPosition + (resultingOffset - initialOffset);
+            if (resultingPosition > initialPosition)
+            {
+                m_subscriberPosition.setOrdered(resultingPosition);
+            }
+        }
+
+        return fragmentsRead;
+    }
+
+    /**
+     * Poll for new messages in a stream. If new messages are found beyond the last consumed position then they
      * will be delivered to the controlled_poll_fragment_handler_t up to a limited number of fragments as specified.
      *
      * To assemble messages that span multiple fragments then use ControlledFragmentAssembler.
