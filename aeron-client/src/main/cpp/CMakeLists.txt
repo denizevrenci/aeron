@@ -163,3 +163,33 @@ if (AERON_INSTALL_TARGETS)
     install(TARGETS aeron_client ARCHIVE DESTINATION lib)
     install(DIRECTORY . DESTINATION  include FILES_MATCHING PATTERN "*.h")
 endif()
+
+# static PIC library
+add_library(aeron_client_pic STATIC ${SOURCE} ${HEADERS})
+
+target_include_directories(aeron_client_pic
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(aeron_client_pic
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_compile_options(aeron_client_pic
+    PRIVATE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-unused-parameter>
+)
+
+target_compile_definitions(aeron_client_pic
+    PUBLIC $<$<NOT:$<CONFIG:Debug>>:DISABLE_BOUNDS_CHECKS>
+    # relative file paths for use in exceptions
+    PUBLIC "__PROJECT_SOURCE_DIR__=\"${NATIVE_PROJECT_SOURCE_DIR}\""
+)
+
+target_link_libraries(aeron_client_pic
+    INTERFACE ${CMAKE_THREAD_LIBS_INIT}
+)
+
+if (AERON_INSTALL_TARGETS)
+    install(TARGETS aeron_client_pic ARCHIVE DESTINATION lib)
+endif()
