@@ -230,6 +230,7 @@ set(AERON_DRIVER_SOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/aeron-driver/src/main/
 if(AERON_TESTS)
     set(AERON_CLIENT_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/aeron-client/src/test/cpp")
     set(AERON_DRIVER_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/aeron-driver/src/test/c")
+    set(AERON_SYSTEM_TESTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/aeron-system-tests/src/test/cpp")
 
     # gmock - includes gtest
     include_directories(${GMOCK_SOURCE_DIR}/googletest/include)
@@ -253,6 +254,7 @@ add_definitions(-D_FILE_OFFSET_BITS=64)
 add_subdirectory(${AERON_CLIENT_SOURCE_PATH})
 if(AERON_TESTS)
    add_subdirectory(${AERON_CLIENT_TEST_PATH})
+   add_subdirectory(${AERON_SYSTEM_TESTS_PATH})
 endif()
 if(AERON_BUILD_SAMPLES)
    add_subdirectory(${AERON_SAMPLES_PATH})
