@@ -196,11 +196,6 @@ public:
     /// @cond HIDDEN_SYMBOLS
     this_t& conclude()
     {
-        if (!m_isOnNewExclusivePublicationHandlerSet)
-        {
-            m_onNewExclusivePublicationHandler = m_onNewPublicationHandler;
-        }
-
         return *this;
     }
     /// @endcond
@@ -264,7 +259,6 @@ public:
     inline this_t& newExclusivePublicationHandler(const on_new_publication_t& handler)
     {
         m_onNewExclusivePublicationHandler = handler;
-        m_isOnNewExclusivePublicationHandlerSet = true;
         return *this;
     }
 
@@ -463,7 +457,6 @@ private:
     long m_mediaDriverTimeout = DEFAULT_MEDIA_DRIVER_TIMEOUT_MS;
     long m_resourceLingerTimeout = DEFAULT_RESOURCE_LINGER_MS;
     bool m_useConductorAgentInvoker = false;
-    bool m_isOnNewExclusivePublicationHandlerSet = false;
     bool m_preTouchMappedMemory = false;
 };
 
