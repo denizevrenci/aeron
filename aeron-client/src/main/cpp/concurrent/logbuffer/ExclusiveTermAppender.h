@@ -330,9 +330,9 @@ private:
         return TERM_APPENDER_FAILED;
     }
 
-    inline void putRawTailOrdered(const std::int64_t termId, const std::int32_t termOffset)
+    inline void putRawTailOrdered(const std::int32_t termId, const std::int32_t termOffset)
     {
-        aeron::concurrent::atomic::putInt64Ordered(m_tailAddr, (termId * ((int64_t(1) << 32))) | uint32_t(termOffset));
+        aeron::concurrent::atomic::putInt64Ordered(m_tailAddr, (termId * ((int64_t(1) << 32))) | (int64_t(0xFFFFFFFF) & termOffset));
     }
 };
 
