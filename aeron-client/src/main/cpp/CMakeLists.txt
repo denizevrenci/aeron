@@ -40,7 +40,6 @@ SET(HEADERS
     LogBuffers.h
     BufferBuilder.h
     FragmentAssembler.h
-    ControlledFragmentAssembler.h
     ExclusivePublication.h
     Counter.h
     ChannelUri.h

@@ -18,7 +18,6 @@
 
 #include <array>
 #include "FragmentAssembler.h"
-#include "ControlledFragmentAssembler.h"
 
 using namespace aeron::util;
 using namespace aeron;

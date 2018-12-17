@@ -58,12 +58,29 @@ public:
      *
      * @return fragment_handler_t composed with the FragmentAssembler instance
      */
-    template <typename F>
+    template <typename F,
+        std::enable_if_t<std::is_same_v<void, std::invoke_result_t<F, AtomicBuffer&, util::index_t, util::index_t, Header&>>, int> = 0>
     auto handler(F&& f)
     {
         return [this, f_f = std::forward<F>(f)](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header) mutable
         {
             this->onFragment(std::forward<F>(f_f), buffer, offset, length, header);
+        };
+    }
+
+    /**
+     * Compose a controlled_fragment_handler_t that calls the this FragmentAssembler instance for reassembly. Suitable for
+     * passing to Subscription::poll(fragment_handler_t, int).
+     *
+     * @return controlled_fragment_handler_t composed with the FragmentAssembler instance
+     */
+    template <typename F,
+        std::enable_if_t<std::is_same_v<ControlledPollAction, std::invoke_result_t<F, AtomicBuffer&, util::index_t, util::index_t, Header&>>, int> = 0>
+    auto handler(F&& f)
+    {
+        return [this, f_f = std::forward<F>(f)](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header) mutable
+        {
+            return this->onFragment(std::forward<F>(f_f), buffer, offset, length, header);
         };
     }
 
@@ -82,7 +99,8 @@ private:
     const std::size_t m_initialBufferLength;
     std::unordered_map<std::int32_t, BufferBuilder> m_builderBySessionIdMap;
 
-    template <typename F>
+    template <typename F,
+        std::enable_if_t<std::is_same_v<void, std::invoke_result_t<F, AtomicBuffer&, util::index_t, util::index_t, Header&>>, int> = 0>
     inline void onFragment(F&& f, AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
     {
         const std::uint8_t flags = header.flags();
@@ -128,6 +146,79 @@ private:
                 }
             }
         }
+    }
+
+    template <typename F,
+        std::enable_if_t<std::is_same_v<ControlledPollAction, std::invoke_result_t<F, AtomicBuffer&, util::index_t, util::index_t, Header&>>, int> = 0>
+    ControlledPollAction onFragment(F&& f, AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
+    {
+        const std::uint8_t flags = header.flags();
+        ControlledPollAction action = ControlledPollAction::CONTINUE;
+
+        if ((flags & FrameDescriptor::UNFRAGMENTED) == FrameDescriptor::UNFRAGMENTED)
+        {
+            action = f(buffer, offset, length, header);
+        }
+        else
+        {
+            if ((flags & FrameDescriptor::BEGIN_FRAG) == FrameDescriptor::BEGIN_FRAG)
+            {
+                auto result = m_builderBySessionIdMap.emplace(header.sessionId(), static_cast<std::uint32_t>(m_initialBufferLength));
+                BufferBuilder& builder = result.first->second;
+
+                builder
+                    .reset()
+                    .append(buffer, offset, length, header);
+            }
+            else
+            {
+                auto result = m_builderBySessionIdMap.find(header.sessionId());
+
+                if (result != m_builderBySessionIdMap.end())
+                {
+                    BufferBuilder& builder = result->second;
+                    const std::uint32_t limit = builder.limit();
+
+                    if (builder.limit() != DataFrameHeader::LENGTH)
+                    {
+                        builder.append(buffer, offset, length, header);
+
+                        if ((flags & FrameDescriptor::END_FRAG) == FrameDescriptor::END_FRAG)
+                        {
+                            const util::index_t msgLength = builder.limit() - DataFrameHeader::LENGTH;
+                            AtomicBuffer msgBuffer(builder.buffer(), builder.limit());
+                            Header assemblyHeader(header);
+
+                            assemblyHeader.buffer(msgBuffer);
+                            assemblyHeader.offset(0);
+                            DataFrameHeader::DataFrameHeaderDefn& frame(
+                                msgBuffer.overlayStruct<DataFrameHeader::DataFrameHeaderDefn>());
+
+                            frame.frameLength = DataFrameHeader::LENGTH + msgLength;
+                            frame.sessionId = header.sessionId();
+                            frame.streamId = header.streamId();
+                            frame.termId = header.termId();
+                            frame.flags = FrameDescriptor::UNFRAGMENTED;
+                            frame.type = DataFrameHeader::HDR_TYPE_DATA;
+                            frame.termOffset = header.termOffset() - (frame.frameLength - header.frameLength());
+
+                            action = f(msgBuffer, DataFrameHeader::LENGTH, msgLength, assemblyHeader);
+
+                            if (ControlledPollAction::ABORT == action)
+                            {
+                                builder.limit(limit);
+                            }
+                            else
+                            {
+                                builder.reset();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return action;
     }
 };
 
