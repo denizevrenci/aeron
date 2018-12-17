@@ -111,8 +111,8 @@ TEST_F(FragmentAssemblerTest, shouldPassThroughUnfragmentedMessage)
         verifyPayload(buffer, offset, length);
     };
 
-    FragmentAssembler adapter(handler);
-    adapter.handler()(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
+    FragmentAssembler adapter;
+    adapter.handler(handler)(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
     EXPECT_TRUE(called);
 }
 
@@ -141,16 +141,16 @@ TEST_F(FragmentAssemblerTest, shouldReassembleFromTwoFragments)
         verifyPayload(buffer, offset, length);
     };
 
-    FragmentAssembler adapter(handler);
+    FragmentAssembler adapter;
 
     fillFrame(FrameDescriptor::BEGIN_FRAG, 0, msgLength, 0);
     m_header.offset(0);
-    adapter.handler()(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 
     m_header.offset(MTU_LENGTH);
     fillFrame(FrameDescriptor::END_FRAG, MTU_LENGTH, msgLength, msgLength % 256);
-    adapter.handler()(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_TRUE(called);
 }
 
@@ -179,21 +179,21 @@ TEST_F(FragmentAssemblerTest, shouldReassembleFromThreeFragments)
         verifyPayload(buffer, offset, length);
     };
 
-    FragmentAssembler adapter(handler);
+    FragmentAssembler adapter;
 
     fillFrame(FrameDescriptor::BEGIN_FRAG, 0, msgLength, 0);
     m_header.offset(0);
-    adapter.handler()(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, 0 + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 
     m_header.offset(MTU_LENGTH);
     fillFrame(0, MTU_LENGTH, msgLength, msgLength % 256);
-    adapter.handler()(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 
     m_header.offset(MTU_LENGTH * 2);
     fillFrame(FrameDescriptor::END_FRAG, MTU_LENGTH * 2, msgLength, (msgLength * 2) % 256);
-    adapter.handler()(m_buffer, (MTU_LENGTH * 2) + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, (MTU_LENGTH * 2) + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_TRUE(called);
 }
 
@@ -206,11 +206,11 @@ TEST_F(FragmentAssemblerTest, shouldNotReassembleIfEndFirstFragment)
         called = true;
     };
 
-    FragmentAssembler adapter(handler);
+    FragmentAssembler adapter;
 
     m_header.offset(MTU_LENGTH);
     fillFrame(FrameDescriptor::END_FRAG, MTU_LENGTH, msgLength, msgLength % 256);
-    adapter.handler()(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 }
 
@@ -223,15 +223,15 @@ TEST_F(FragmentAssemblerTest, shouldNotReassembleIfMissingBegin)
         called = true;
     };
 
-    FragmentAssembler adapter(handler);
+    FragmentAssembler adapter;
 
     m_header.offset(MTU_LENGTH);
     fillFrame(0, MTU_LENGTH, msgLength, msgLength % 256);
-    adapter.handler()(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, MTU_LENGTH + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 
     m_header.offset(MTU_LENGTH * 2);
     fillFrame(FrameDescriptor::END_FRAG, MTU_LENGTH * 2, msgLength, (msgLength * 2) % 256);
-    adapter.handler()(m_buffer, (MTU_LENGTH * 2) + DataFrameHeader::LENGTH, msgLength, m_header);
+    adapter.handler(handler)(m_buffer, (MTU_LENGTH * 2) + DataFrameHeader::LENGTH, msgLength, m_header);
     ASSERT_FALSE(called);
 }

@@ -152,7 +152,9 @@ int main(int argc, char **argv)
 
         BusySpinIdleStrategy idleStrategy;
         BusySpinIdleStrategy pingHandlerIdleStrategy;
-        FragmentAssembler fragmentAssembler(
+        FragmentAssembler fragmentAssembler;
+
+        fragment_handler_t handler = fragmentAssembler.handler(
             [&](AtomicBuffer& buffer, index_t offset, index_t length, const Header& header)
             {
                 if (pongPublicationRef.offer(buffer, offset, length) > 0L)
@@ -165,8 +167,6 @@ int main(int argc, char **argv)
                     pingHandlerIdleStrategy.idle();
                 }
             });
-
-        fragment_handler_t handler = fragmentAssembler.handler();
 
         while (running)
         {

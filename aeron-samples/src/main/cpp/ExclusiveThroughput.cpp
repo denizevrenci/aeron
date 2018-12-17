@@ -187,8 +187,8 @@ int main(int argc, char **argv)
         }
 
         RateReporter rateReporter(std::chrono::seconds(1), printRate);
-        FragmentAssembler fragmentAssembler(rateReporterHandler(rateReporter));
-        auto handler = fragmentAssembler.handler();
+        FragmentAssembler fragmentAssembler;
+        auto handler = fragmentAssembler.handler(rateReporterHandler(rateReporter));
 
         std::shared_ptr<std::thread> rateReporterThread;
 

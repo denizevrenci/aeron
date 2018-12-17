@@ -187,8 +187,8 @@ int main(int argc, char **argv)
         BusySpinIdleStrategy pollIdleStrategy;
 
         RateReporter rateReporter(std::chrono::seconds(1), printRate);
-        FragmentAssembler fragmentAssembler(rateReporterHandler(rateReporter));
-        fragment_handler_t handler = fragmentAssembler.handler();
+        FragmentAssembler fragmentAssembler;
+        fragment_handler_t handler = fragmentAssembler.handler(rateReporterHandler(rateReporter));
 
         std::shared_ptr<std::thread> rateReporterThread;
 

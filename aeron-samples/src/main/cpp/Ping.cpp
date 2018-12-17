@@ -245,7 +245,13 @@ int main(int argc, char **argv)
         {
             hdr_reset(histogram);
 
-            FragmentAssembler fragmentAssembler(
+            FragmentAssembler fragmentAssembler;
+
+            std::cout << "Pinging "
+                << toStringWithCommas(settings.numberOfMessages) << " messages of length "
+                << toStringWithCommas(settings.messageLength) << " bytes" << std::endl;
+
+            sendPingAndReceivePong(fragmentAssembler.handler(
                 [&](const AtomicBuffer& buffer, index_t offset, index_t length, const Header& header)
                 {
                     steady_clock::time_point end = steady_clock::now();
@@ -255,13 +261,7 @@ int main(int argc, char **argv)
                     std::int64_t nanoRtt = duration<std::int64_t, std::nano>(end - start).count();
 
                     hdr_record_value(histogram, nanoRtt);
-                });
-
-            std::cout << "Pinging "
-                << toStringWithCommas(settings.numberOfMessages) << " messages of length "
-                << toStringWithCommas(settings.messageLength) << " bytes" << std::endl;
-
-            sendPingAndReceivePong(fragmentAssembler.handler(), *pingPublication, *pongSubscription, settings);
+                }), *pingPublication, *pongSubscription, settings);
 
             hdr_percentiles_print(histogram, stdout, 5, 1000.0, CLASSIC);
             fflush(stdout);

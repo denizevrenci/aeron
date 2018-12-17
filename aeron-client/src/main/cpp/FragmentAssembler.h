@@ -46,9 +46,9 @@ public:
      * @param delegate            onto which whole messages are forwarded.
      * @param initialBufferLength to be used for each session.
      */
-    FragmentAssembler(
-        const fragment_handler_t& delegate, size_t initialBufferLength = DEFAULT_FRAGMENT_ASSEMBLY_BUFFER_LENGTH) :
-        m_initialBufferLength(initialBufferLength), m_delegate(delegate)
+    explicit FragmentAssembler(
+        size_t initialBufferLength = DEFAULT_FRAGMENT_ASSEMBLY_BUFFER_LENGTH) :
+        m_initialBufferLength(initialBufferLength)
     {
     }
 
@@ -58,11 +58,12 @@ public:
      *
      * @return fragment_handler_t composed with the FragmentAssembler instance
      */
-    fragment_handler_t handler()
+    template <typename F>
+    auto handler(F&& f)
     {
-        return [this](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
+        return [this, f_f = std::forward<F>(f)](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header) mutable
         {
-            this->onFragment(buffer, offset, length, header);
+            this->onFragment(std::forward<F>(f_f), buffer, offset, length, header);
         };
     }
 
@@ -79,16 +80,16 @@ public:
 
 private:
     const std::size_t m_initialBufferLength;
-    fragment_handler_t m_delegate;
     std::unordered_map<std::int32_t, BufferBuilder> m_builderBySessionIdMap;
 
-    inline void onFragment(AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
+    template <typename F>
+    inline void onFragment(F&& f, AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
     {
         const std::uint8_t flags = header.flags();
 
         if ((flags & FrameDescriptor::UNFRAGMENTED) == FrameDescriptor::UNFRAGMENTED)
         {
-            m_delegate(buffer, offset, length, header);
+            f(buffer, offset, length, header);
         }
         else
         {
@@ -119,7 +120,7 @@ private:
                             const util::index_t msgLength = builder.limit() - DataFrameHeader::LENGTH;
                             AtomicBuffer msgBuffer(builder.buffer(), builder.limit());
 
-                            m_delegate(msgBuffer, DataFrameHeader::LENGTH, msgLength, header);
+                            f(msgBuffer, DataFrameHeader::LENGTH, msgLength, header);
 
                             builder.reset();
                         }

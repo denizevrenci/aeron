@@ -249,7 +249,9 @@ int main(int argc, char **argv)
         Subscription& pingSubscriptionRef = *pingSubscription;
         BusySpinIdleStrategy idleStrategy;
         BusySpinIdleStrategy pingHandlerIdleStrategy;
-        FragmentAssembler pingFragmentAssembler(
+        FragmentAssembler pingFragmentAssembler;
+
+        fragment_handler_t ping_handler = pingFragmentAssembler.handler(
             [&](AtomicBuffer& buffer, index_t offset, index_t length, const Header& header)
             {
                 if (pongPublicationRef.offer(buffer, offset, length) > 0L)
@@ -262,8 +264,6 @@ int main(int argc, char **argv)
                     pingHandlerIdleStrategy.idle();
                 }
             });
-
-        fragment_handler_t ping_handler = pingFragmentAssembler.handler();
 
         std::thread pongThread(
             [&]()
@@ -308,7 +308,14 @@ int main(int argc, char **argv)
         {
             hdr_reset(histogram);
 
-            FragmentAssembler fragmentAssembler(
+            FragmentAssembler fragmentAssembler;
+
+            std::cout << "Pinging "
+                << toStringWithCommas(settings.numberOfMessages) << " messages of length "
+                << toStringWithCommas(settings.messageLength) << " bytes" << std::endl;
+
+            steady_clock::time_point startRun = steady_clock::now();
+            sendPingAndReceivePong(fragmentAssembler.handler(
                 [&](const AtomicBuffer& buffer, index_t offset, index_t length, const Header& header)
                 {
                     steady_clock::time_point end = steady_clock::now();
@@ -318,14 +325,7 @@ int main(int argc, char **argv)
                     std::int64_t nanoRtt = duration<std::int64_t, std::nano>(end - start).count();
 
                     hdr_record_value(histogram, nanoRtt);
-                });
-
-            std::cout << "Pinging "
-                << toStringWithCommas(settings.numberOfMessages) << " messages of length "
-                << toStringWithCommas(settings.messageLength) << " bytes" << std::endl;
-
-            steady_clock::time_point startRun = steady_clock::now();
-            sendPingAndReceivePong(fragmentAssembler.handler(), *pingPublication, *pongSubscription, settings);
+                }), *pingPublication, *pongSubscription, settings);
             steady_clock::time_point endRun = steady_clock::now();
 
             hdr_percentiles_print(histogram, stdout, 5, 1000.0, CLASSIC);

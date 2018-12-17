@@ -45,11 +45,9 @@ public:
      * @param delegate            onto which whole messages are forwarded.
      * @param initialBufferLength to be used for each session.
      */
-    ControlledFragmentAssembler(
-        const controlled_poll_fragment_handler_t& delegate,
+    explicit ControlledFragmentAssembler(
         size_t initialBufferLength = DEFAULT_CONTROLLED_FRAGMENT_ASSEMBLY_BUFFER_LENGTH) :
-        m_initialBufferLength(initialBufferLength),
-        m_delegate(delegate)
+        m_initialBufferLength(initialBufferLength)
     {
     }
 
@@ -59,11 +57,12 @@ public:
      *
      * @return controlled_poll_fragment_handler_t composed with the ControlledFragmentAssembler instance
      */
-    controlled_poll_fragment_handler_t handler()
+    template <typename F>
+    auto handler(F&& f)
     {
-        return [&](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
+        return [this, f_f = std::forward<F>(f)](AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header) mutable
         {
-            return this->onFragment(buffer, offset, length, header);
+            return this->onFragment(std::forward<F>(f_f), buffer, offset, length, header);
         };
     }
 
@@ -80,17 +79,17 @@ public:
 
 private:
     const std::size_t m_initialBufferLength;
-    controlled_poll_fragment_handler_t m_delegate;
     std::unordered_map<std::int32_t, BufferBuilder> m_builderBySessionIdMap;
 
-    ControlledPollAction onFragment(AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
+    template <typename F>
+    ControlledPollAction onFragment(F&& f, AtomicBuffer& buffer, util::index_t offset, util::index_t length, Header& header)
     {
         const std::uint8_t flags = header.flags();
         ControlledPollAction action = ControlledPollAction::CONTINUE;
 
         if ((flags & FrameDescriptor::UNFRAGMENTED) == FrameDescriptor::UNFRAGMENTED)
         {
-            action = m_delegate(buffer, offset, length, header);
+            action = f(buffer, offset, length, header);
         }
         else
         {
@@ -135,7 +134,7 @@ private:
                             frame.type = DataFrameHeader::HDR_TYPE_DATA;
                             frame.termOffset = header.termOffset() - (frame.frameLength - header.frameLength());
 
-                            action = m_delegate(msgBuffer, DataFrameHeader::LENGTH, msgLength, assemblyHeader);
+                            action = f(msgBuffer, DataFrameHeader::LENGTH, msgLength, assemblyHeader);
 
                             if (ControlledPollAction::ABORT == action)
                             {
