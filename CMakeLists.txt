@@ -175,22 +175,22 @@ endif()
 # platform specific flags
 if(APPLE)
     add_compile_options(-Wsign-compare)
-    add_definitions(-DDarwin)
+    add_compile_definitions(Darwin)
     add_compile_options(-Wno-deprecated-register)
 elseif(CYGWIN)
-    add_definitions(-DWIN32)
+    add_compile_definitions(WIN32)
     if(AERON_TESTS)
-        add_definitions(-DGTEST_HAS_PTHREAD)
+        add_compile_definitions(GTEST_HAS_PTHREAD)
     endif()
     set(CMAKE_CXX_EXTENSIONS ON)
 elseif(MSVC)
-    add_definitions(-DWIN32)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    add_definitions(-DNOMINMAX)
+    add_compile_definitions(WIN32)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    add_compile_definitions(NOMINMAX)
 
     if(${MSVC_VERSION} GREATER_EQUAL 1915)
         # Acknowledge that we understand MSVC resolved a byte alignment issue in this compiler
-        add_definitions( -D_ENABLE_EXTENDED_ALIGNED_STORAGE )
+        add_compile_definitions( _ENABLE_EXTENDED_ALIGNED_STORAGE )
     endif()
 
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /Od /Zi /MP")
@@ -240,7 +240,7 @@ endif()
 
 ##########################################################
 
-add_definitions(-D_FILE_OFFSET_BITS=64)
+add_compile_definitions(_FILE_OFFSET_BITS=64)
 
 add_subdirectory(${AERON_CLIENT_SOURCE_PATH})
 if(AERON_TESTS)
