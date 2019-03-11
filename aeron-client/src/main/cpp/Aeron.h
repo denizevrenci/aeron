@@ -63,7 +63,7 @@ public:
      *
      * @param context for configuration of the client.
      */
-    Aeron(Context& context);
+    Aeron(Context context);
 
     ~Aeron();
 

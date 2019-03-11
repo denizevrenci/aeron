@@ -26,10 +26,10 @@ static const std::chrono::duration<long, std::milli> IDLE_SLEEP_MS_100(100);
 
 static const char* AGENT_NAME = "client-conductor";
 
-Aeron::Aeron(Context &context) :
+Aeron::Aeron(Context context) :
     m_randomEngine(m_randomDevice()),
     m_sessionIdDistribution(-INT_MAX, INT_MAX),
-    m_context(context.conclude()),
+    m_context(std::move(context)),
     m_cncBuffer(mapCncFile(m_context)),
     m_toDriverAtomicBuffer(CncFileDescriptor::createToDriverBuffer(m_cncBuffer)),
     m_toClientsAtomicBuffer(CncFileDescriptor::createToClientsBuffer(m_cncBuffer)),
@@ -59,6 +59,7 @@ Aeron::Aeron(Context &context) :
     m_conductorRunner(m_conductor, m_idleStrategy, m_context.m_exceptionHandler, AGENT_NAME),
     m_conductorInvoker(m_conductor, m_context.m_exceptionHandler)
 {
+    m_context.conclude();
     if (m_context.m_useConductorAgentInvoker)
     {
         m_conductorInvoker.start();
