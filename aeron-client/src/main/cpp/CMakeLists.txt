@@ -140,6 +140,10 @@ else()
     set(NATIVE_PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 endif()
 
+target_compile_options(aeron_client
+    PRIVATE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-unused-parameter>
+)
+
 target_compile_definitions(aeron_client
     PUBLIC $<$<NOT:$<CONFIG:Debug>>:DISABLE_BOUNDS_CHECKS>
     # relative file paths for use in exceptions
