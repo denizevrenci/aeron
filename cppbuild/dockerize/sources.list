@@ -1,0 +1,4 @@
+deb mirror://mirrors.ubuntu.com/mirrors.txt disco main restricted universe multiverse
+deb mirror://mirrors.ubuntu.com/mirrors.txt disco-updates main restricted universe multiverse
+deb mirror://mirrors.ubuntu.com/mirrors.txt disco-backports main restricted universe multiverse
+deb mirror://mirrors.ubuntu.com/mirrors.txt disco-security main restricted universe multiverse
